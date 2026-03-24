@@ -17,6 +17,10 @@ import SuccessScreen from '../screens/reporter/SuccessScreen'
 
 // Investigator screens (Phase B)
 import InvestigatorDashboardScreen from '../screens/investigator/DashboardScreen'
+import ReportDetailScreen from '../screens/investigator/ReportDetailScreen'
+import PillarRiskScreen from '../screens/investigator/PillarRiskScreen'
+import CapaScreen from '../screens/investigator/CapaScreen'
+import ForwardedScreen from '../screens/investigator/ForwardedScreen'
 
 const Stack = createNativeStackNavigator()
 
@@ -72,7 +76,13 @@ export default function RootNavigator() {
 
                 ) : profile?.role === 'investigator' ? (
                     // ── Investigator flow ──────────────────────────
-                    <Stack.Screen name="InvestigatorDashboard" component={InvestigatorDashboardScreen} />
+                    <>
+                        <Stack.Screen name="InvestigatorDashboard" component={InvestigatorDashboardScreen} />
+                        <Stack.Screen name="ReportDetail"          component={ReportDetailScreen} />
+                        <Stack.Screen name="PillarRisk"            component={PillarRiskScreen} />
+                        <Stack.Screen name="Capa"                  component={CapaScreen} />
+                        <Stack.Screen name="Forwarded"             component={ForwardedScreen} />
+                    </>
 
                 ) : (
                     // ── Reporter flow ──────────────────────────────
