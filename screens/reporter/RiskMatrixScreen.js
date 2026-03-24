@@ -49,7 +49,7 @@ export default function RiskMatrixScreen({ navigation, route }) {
             context,
             incidentType,
             details,
-            initialRisk: pos,
+            initialRisk: { x: pos.x + 1, y: pos.y + 1 },
         })
     }
 

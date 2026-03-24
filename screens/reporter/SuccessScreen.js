@@ -10,7 +10,6 @@ export default function SuccessScreen({ navigation, route }) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [incident, setIncident] = useState(null)
-    const [points, setPoints] = useState(0)
 
     useEffect(() => {
         submitReport()
@@ -50,17 +49,7 @@ export default function SuccessScreen({ navigation, route }) {
 
             setIncident(data)
 
-            // ── 2. Award safety points ─────────────────────────
-            const earnedPoints = 20
-            const { error: pointsError } = await supabase
-                .from('safety_points')
-                .insert({
-                    user_id: user.id,
-                    points: earnedPoints,
-                    reason: `Reported incident ${data.reference_number}`,
-                })
-
-            if (!pointsError) setPoints(earnedPoints)
+            // Safety points are awarded by the investigator upon approval — not here
 
         } catch (err) {
             console.error('Submit error:', err)
@@ -128,18 +117,18 @@ export default function SuccessScreen({ navigation, route }) {
                     <Text style={styles.refLabel}>REPORT REFERENCE</Text>
                     <Text style={styles.refNumber}>{incident?.reference_number || '—'}</Text>
                     <Text style={styles.refSub}>
-                        {incidentType} · {details.locationLabel || 'Location not pinned'}
+                        {incidentType} · {incident?.overall_risk || 'Risk not calculated'} · {details.locationLabel || 'Location not pinned'}
                     </Text>
                 </View>
 
                 {/* Points badge */}
                 <View style={styles.pointsBadge}>
-                    <Text style={styles.pointsIcon}>🏆</Text>
+                    <Text style={styles.pointsIcon}>⏳</Text>
                     <View style={styles.pointsText}>
-                        <Text style={styles.pointsLabel}>ACHIEVEMENT UNLOCKED</Text>
-                        <Text style={styles.pointsValue}>+{points} Safety Points</Text>
+                        <Text style={styles.pointsLabel}>SAFETY POINTS</Text>
+                        <Text style={styles.pointsValue}>Pending Approval</Text>
                         <Text style={styles.pointsSub}>
-                            Keep reporting to level up!
+                            Points are awarded once an investigator approves your report.
                         </Text>
                     </View>
                 </View>

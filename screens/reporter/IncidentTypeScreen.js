@@ -22,7 +22,7 @@ export default function IncidentTypeScreen({ navigation, route }) {
             color: '#F97316',
         },
         {
-            key: 'Actual Incident',
+            key: 'Actual',
             icon: '🚫',
             sub: 'Injury or damage has occurred',
             color: '#EF4444',
