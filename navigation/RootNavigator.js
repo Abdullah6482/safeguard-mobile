@@ -14,6 +14,7 @@ import IncidentTypeScreen from '../screens/reporter/IncidentTypeScreen'
 import DetailsScreen from '../screens/reporter/DetailsScreen'
 import RiskMatrixScreen from '../screens/reporter/RiskMatrixScreen'
 import SuccessScreen from '../screens/reporter/SuccessScreen'
+import CameraScreen from '../screens/reporter/CameraScreen'
 
 // Investigator screens (Phase B)
 import InvestigatorDashboardScreen from '../screens/investigator/DashboardScreen'
@@ -91,6 +92,7 @@ export default function RootNavigator() {
                         <Stack.Screen name="Context" component={ContextScreen} />
                         <Stack.Screen name="IncidentType" component={IncidentTypeScreen} />
                         <Stack.Screen name="Details" component={DetailsScreen} />
+                        <Stack.Screen name="Camera" component={CameraScreen} />
                         <Stack.Screen name="RiskMatrix" component={RiskMatrixScreen} />
                         <Stack.Screen name="Success" component={SuccessScreen} />
 

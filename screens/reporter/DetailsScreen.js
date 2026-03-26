@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, TextInput, Alert,
+    ScrollView, TextInput, Alert, Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -11,6 +11,7 @@ export default function DetailsScreen({ navigation, route }) {
     const [form, setForm] = useState({
         description: '',
         photoAttached: false,
+        photoUri: null,
         locationPinned: false,
         locationLabel: '',
         witnesses: '',
@@ -18,6 +19,13 @@ export default function DetailsScreen({ navigation, route }) {
     })
 
     const set = (key, value) => setForm(f => ({ ...f, [key]: value }))
+
+    useEffect(() => {
+        if (route.params?.photoUri) {
+            set('photoUri', route.params.photoUri)
+            set('photoAttached', true)
+        }
+    }, [route.params?.photoUri])
 
     const isValid = form.description && form.immediateAction
 
@@ -62,18 +70,20 @@ export default function DetailsScreen({ navigation, route }) {
                             styles.uploadBox,
                             form.photoAttached && styles.uploadBoxDone,
                         ]}
-                        onPress={() => set('photoAttached', true)}
+                        onPress={() => navigation.navigate('Camera')}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.uploadIcon}>
-                            {form.photoAttached ? '✅' : '📷'}
-                        </Text>
-                        <Text style={[
-                            styles.uploadText,
-                            form.photoAttached && styles.uploadTextDone,
-                        ]}>
-                            {form.photoAttached ? 'Photo attached' : 'Tap to upload photo'}
-                        </Text>
+                        {form.photoUri ? (
+                            <Image 
+                                source={{ uri: form.photoUri }} 
+                                style={styles.photoPreview} 
+                            />
+                        ) : (
+                            <>
+                                <Text style={styles.uploadIcon}>📷</Text>
+                                <Text style={styles.uploadText}>Tap to upload photo</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
                 </SectionCard>
 
@@ -281,11 +291,13 @@ const styles = StyleSheet.create({
         borderWidth: 2, borderStyle: 'dashed',
         borderColor: C.border, backgroundColor: C.surface,
         alignItems: 'center', justifyContent: 'center', gap: 6,
+        overflow: 'hidden',
     },
-    uploadBoxDone: { borderColor: C.green + '88', backgroundColor: C.green + '11' },
+    uploadBoxDone: { borderColor: C.green + '55', backgroundColor: C.green + '11', borderWidth: 1, borderStyle: 'solid' },
     uploadIcon: { fontSize: 26 },
     uploadText: { fontSize: 13, color: C.muted, fontWeight: '600' },
     uploadTextDone: { color: C.green },
+    photoPreview: { width: '100%', height: '100%', resizeMode: 'cover' },
 
     // Location box
     locationBox: {
