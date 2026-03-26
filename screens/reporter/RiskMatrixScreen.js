@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, SafeAreaView, Dimensions,
+    ScrollView, Dimensions,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 // ── Risk helpers ───────────────────────────────────────────────────────────
 

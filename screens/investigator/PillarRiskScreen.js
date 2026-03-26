@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, SafeAreaView,
+    ScrollView,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 const C = {
     bg: '#070B13', surface: '#0D1422', panel: '#121C30',

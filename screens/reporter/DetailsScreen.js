@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, TextInput, SafeAreaView, Alert,
+    ScrollView, TextInput, Alert,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 export default function DetailsScreen({ navigation, route }) {
     const { context, incidentType } = route.params

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, TextInput, SafeAreaView, Alert, ActivityIndicator
+    ScrollView, TextInput, Alert, ActivityIndicator
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
 
 // ── Reusable form components ───────────────────────────────────────────────
