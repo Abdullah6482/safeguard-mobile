@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, ActivityIndicator,
+    ScrollView, ActivityIndicator, Image, Modal
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
@@ -58,6 +58,7 @@ export default function ReportDetailScreen({ navigation, route }) {
     const { incidentId } = route.params
     const [incident, setIncident] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [photoModal, setPhotoModal] = useState(false)
 
     useEffect(() => {
         const fetchIncident = async () => {
@@ -163,6 +164,23 @@ export default function ReportDetailScreen({ navigation, route }) {
                     <Text style={styles.actionText}>{incident.immediate_action || 'None recorded'}</Text>
                 </View>
 
+                {/* Photo Evidence */}
+                {incident.photo_url && (
+                    <View style={styles.card}>
+                        <Text style={styles.sectionTitle}>📷  Photo Evidence</Text>
+                        <TouchableOpacity activeOpacity={0.8} onPress={() => setPhotoModal(true)}>
+                            <Image
+                                source={{ uri: incident.photo_url }}
+                                style={styles.evidenceImage}
+                                resizeMode="cover"
+                            />
+                            <View style={{ position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6 }}>
+                                <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>View Full</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 {/* Risk matrix preview */}
                 <View style={styles.card}>
                     <View style={styles.riskHeader}>
@@ -213,6 +231,16 @@ export default function ReportDetailScreen({ navigation, route }) {
                     </TouchableOpacity>
                 )}
             </ScrollView>
+
+            {/* Full Screen Photo Modal */}
+            <Modal visible={photoModal} transparent={true} animationType="fade" onRequestClose={() => setPhotoModal(false)}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
+                    <TouchableOpacity style={{ position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 12, backgroundColor: '#222', borderRadius: 8 }} onPress={() => setPhotoModal(false)}>
+                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>✕ Close</Text>
+                    </TouchableOpacity>
+                    <Image source={{ uri: incident?.photo_url }} style={{ width: '100%', height: '80%' }} resizeMode="contain" />
+                </View>
+            </Modal>
         </SafeAreaView>
     )
 }
@@ -269,4 +297,11 @@ const styles = StyleSheet.create({
     closedText: { color: C.green, fontWeight: '700', fontSize: 13 },
     reviewBox:  { backgroundColor: C.orange + '11', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: C.orange + '33' },
     reviewText: { color: C.orange, fontWeight: '700', fontSize: 13 },
+
+    evidenceImage: {
+        width: '100%',
+        height: 240,
+        borderRadius: 12,
+        backgroundColor: C.surface,
+    },
 })

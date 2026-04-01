@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, ActivityIndicator
+    ScrollView, ActivityIndicator, Animated
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
@@ -56,11 +56,7 @@ export default function HomeScreen({ navigation }) {
     }
 
     if (loading) {
-        return (
-            <View style={styles.centered}>
-                <ActivityIndicator color="#2563EB" size="large" />
-            </View>
-        )
+        return <HomeSkeleton />
     }
 
     const streakPct = Math.min((stats.total / 20) * 100, 100)
@@ -89,11 +85,13 @@ export default function HomeScreen({ navigation }) {
                             {profile?.department} · {profile?.job_title}
                         </Text>
                     </View>
-                    <TouchableOpacity style={styles.avatar} onPress={handleSignOut}>
-                        <Text style={styles.avatarText}>
-                            {profile?.full_name?.[0] || '?'}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={styles.headerRight}>
+                        <TouchableOpacity style={styles.avatar} onPress={handleSignOut}>
+                            <Text style={styles.avatarText}>
+                                {profile?.full_name?.[0] || '?'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* ── Stats strip ────────────────────────────── */}
@@ -154,6 +152,55 @@ export default function HomeScreen({ navigation }) {
                 </TouchableOpacity>
 
             </ScrollView>
+        </SafeAreaView>
+    )
+}
+
+function HomeSkeleton() {
+    const fadeAnim = useState(new Animated.Value(0.3))[0]
+    
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+                Animated.timing(fadeAnim, { toValue: 0.3, duration: 800, useNativeDriver: true })
+            ])
+        ).start()
+    }, [])
+
+    const SkeleBlock = ({ height, width, borderRadius = 8, marginBottom = 10, style }) => (
+        <Animated.View style={[{ height, width, borderRadius, backgroundColor: '#1E293B', marginBottom, opacity: fadeAnim }, style]} />
+    )
+
+    return (
+        <SafeAreaView style={styles.safe}>
+            <View style={styles.content}>
+                <View style={[styles.header, { marginTop: 8 }]}>
+                    <View style={styles.headerLeft}>
+                        <SkeleBlock height={12} width={100} />
+                        <SkeleBlock height={28} width={180} />
+                        <SkeleBlock height={14} width={150} />
+                    </View>
+                    <SkeleBlock height={46} width={46} borderRadius={14} />
+                </View>
+
+                <View style={styles.statsRow}>
+                    <SkeleBlock height={90} width="31%" borderRadius={14} />
+                    <SkeleBlock height={90} width="31%" borderRadius={14} />
+                    <SkeleBlock height={90} width="31%" borderRadius={14} />
+                </View>
+
+                <SkeleBlock height={120} width="100%" borderRadius={16} marginBottom={24} />
+
+                <SkeleBlock height={16} width={120} marginBottom={16} />
+                
+                <View style={styles.badgeGrid}>
+                    <SkeleBlock height={70} width="47.5%" borderRadius={14} />
+                    <SkeleBlock height={70} width="47.5%" borderRadius={14} />
+                    <SkeleBlock height={70} width="47.5%" borderRadius={14} />
+                    <SkeleBlock height={70} width="47.5%" borderRadius={14} />
+                </View>
+            </View>
         </SafeAreaView>
     )
 }
@@ -220,6 +267,11 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: '800',
         fontSize: 20,
+    },
+    headerRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
 
     // ── Stats ─────────────────────────────────────────

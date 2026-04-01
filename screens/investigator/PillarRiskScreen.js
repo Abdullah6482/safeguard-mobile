@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView,
+    ScrollView, Animated
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -39,6 +39,16 @@ export default function PillarRiskScreen({ navigation, route }) {
     const setRating = (key, val) => setRatings(r => ({ ...r, [key]: val }))
     const overall = deriveOverall(ratings)
     const allSet = Object.values(ratings).every(Boolean)
+
+    const btnAnim = useState(new Animated.Value(0))[0]
+
+    useEffect(() => {
+        Animated.timing(btnAnim, {
+            toValue: allSet ? 1 : 0,
+            duration: 300,
+            useNativeDriver: true,
+        }).start()
+    }, [allSet])
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -134,14 +144,16 @@ export default function PillarRiskScreen({ navigation, route }) {
                 </View>
 
                 {/* Continue */}
-                <TouchableOpacity
-                    style={[styles.ctaBtn, !allSet && styles.ctaDisabled]}
-                    onPress={() => navigation.navigate('Capa', { incident, pillarRatings: ratings, overallRisk: overall })}
-                    disabled={!allSet}
-                    activeOpacity={0.85}
-                >
-                    <Text style={styles.ctaBtnText}>Continue to Root Cause  →</Text>
-                </TouchableOpacity>
+                <Animated.View style={{ opacity: btnAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ scale: btnAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }] }}>
+                    <TouchableOpacity
+                        style={[styles.ctaBtn, !allSet && styles.ctaDisabled]}
+                        onPress={() => navigation.navigate('Capa', { incident, pillarRatings: ratings, overallRisk: overall })}
+                        disabled={!allSet}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.ctaBtnText}>Continue to Root Cause  →</Text>
+                    </TouchableOpacity>
+                </Animated.View>
 
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
                     <Text style={styles.backText}>← Back</Text>
@@ -192,7 +204,7 @@ const styles = StyleSheet.create({
     overallSub:    { fontSize: 11, color: C.sub, marginTop: 4 },
 
     ctaBtn:     { backgroundColor: C.amber, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 10, shadowColor: C.amber, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 },
-    ctaDisabled:{ opacity: 0.4, shadowOpacity: 0, elevation: 0 },
+    ctaDisabled:{ shadowOpacity: 0, elevation: 0 },
     ctaBtnText: { color: '#000', fontWeight: '900', fontSize: 15 },
     backBtn:    { paddingVertical: 14, alignItems: 'center', borderRadius: 14, borderWidth: 1.5, borderColor: C.border },
     backText:   { color: C.sub, fontWeight: '700', fontSize: 14 },

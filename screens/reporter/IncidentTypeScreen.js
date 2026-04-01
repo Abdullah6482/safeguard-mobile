@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView,
+    ScrollView, Animated, TouchableWithoutFeedback
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -73,37 +73,14 @@ export default function IncidentTypeScreen({ navigation, route }) {
 
                 {/* Cards */}
                 <View style={styles.cardList}>
-                    {cards.map(c => {
-                        const active = selected === c.key
-                        return (
-                            <TouchableOpacity
-                                key={c.key}
-                                style={[
-                                    styles.card,
-                                    active && { borderColor: c.color + '99', backgroundColor: c.color + '12' },
-                                    active && { shadowColor: c.color, shadowOpacity: 0.25, shadowRadius: 16 },
-                                ]}
-                                onPress={() => setSelected(c.key)}
-                                activeOpacity={0.85}
-                            >
-                                {/* Icon box */}
-                                <View style={[styles.iconBox, { backgroundColor: c.color + '22' }]}>
-                                    <Text style={styles.iconText}>{c.icon}</Text>
-                                </View>
-
-                                {/* Text */}
-                                <View style={styles.cardBody}>
-                                    <Text style={[styles.cardTitle, active && { color: c.color }]}>
-                                        {c.key}
-                                    </Text>
-                                    <Text style={styles.cardSub}>{c.sub}</Text>
-                                </View>
-
-                                {/* Arrow */}
-                                <Text style={[styles.arrow, active && { color: c.color }]}>›</Text>
-                            </TouchableOpacity>
-                        )
-                    })}
+                    {cards.map(c => (
+                        <AnimatedCard 
+                            key={c.key} 
+                            card={c} 
+                            active={selected === c.key} 
+                            onPress={() => setSelected(c.key)} 
+                        />
+                    ))}
                 </View>
 
                 {/* Buttons */}
@@ -126,6 +103,46 @@ export default function IncidentTypeScreen({ navigation, route }) {
 
             </ScrollView>
         </SafeAreaView>
+    )
+}
+
+function AnimatedCard({ active, card, onPress }) {
+    const scale = useState(new Animated.Value(1))[0]
+
+    const handlePressIn = () => {
+        Animated.spring(scale, { toValue: 0.95, useNativeDriver: true }).start()
+    }
+    const handlePressOut = () => {
+        Animated.spring(scale, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true }).start()
+    }
+
+    return (
+        <TouchableWithoutFeedback 
+            onPressIn={handlePressIn} 
+            onPressOut={handlePressOut} 
+            onPress={onPress}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+            <Animated.View style={[
+                styles.card,
+                active && { borderColor: card.color + '99', backgroundColor: card.color + '12' },
+                active && { shadowColor: card.color, shadowOpacity: 0.25, shadowRadius: 16 },
+                { transform: [{ scale }] }
+            ]}>
+                <View style={[styles.iconBox, { backgroundColor: card.color + '22' }]}>
+                    <Text style={styles.iconText}>{card.icon}</Text>
+                </View>
+
+                <View style={styles.cardBody}>
+                    <Text style={[styles.cardTitle, active && { color: card.color }]}>
+                        {card.key}
+                    </Text>
+                    <Text style={styles.cardSub}>{card.sub}</Text>
+                </View>
+
+                <Text style={[styles.arrow, active && { color: card.color }]}>›</Text>
+            </Animated.View>
+        </TouchableWithoutFeedback>
     )
 }
 

@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-export default function CameraScreen({ navigation }) {
+export default function CameraScreen({ navigation, route }) {
     const [facing, setFacing] = useState('back')
     const [flash, setFlash] = useState('off') // 'off', 'on', 'auto'
     const [permission, requestPermission] = useCameraPermissions()
@@ -51,10 +51,9 @@ export default function CameraScreen({ navigation }) {
                 quality: 0.8,
             })
             if (photo && photo.uri) {
-                navigation.navigate({
-                    name: 'Details',
-                    params: { photoUri: photo.uri },
-                    merge: true,
+                navigation.navigate('Details', {
+                    ...(route.params || {}),
+                    photoUri: photo.uri,
                 })
             }
         } catch (e) {
@@ -70,10 +69,9 @@ export default function CameraScreen({ navigation }) {
         })
 
         if (!result.canceled && result.assets && result.assets.length > 0) {
-            navigation.navigate({
-                name: 'Details',
-                params: { photoUri: result.assets[0].uri },
-                merge: true,
+            navigation.navigate('Details', {
+                ...(route.params || {}),
+                photoUri: result.assets[0].uri,
             })
         }
     }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, ActivityIndicator,
+    ScrollView, ActivityIndicator, TextInput, Animated
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
@@ -33,43 +33,6 @@ function Field({ label, required, children }) {
             </Text>
             {children}
         </View>
-    )
-}
-
-function StyledInput({ value, onChangeText, placeholder, multiline, numberOfLines }) {
-    const [focused, setFocused] = useState(false)
-    return (
-        <View style={[styles.input, focused && styles.inputFocused, multiline && { height: numberOfLines * 22 + 22, paddingTop: 11 }]}>
-            <View style={{ flex: 1 }}>
-                {/* React Native TextInput replacement using TouchableOpacity + Text for styling */}
-                <TextInputShim
-                    value={value}
-                    onChangeText={onChangeText}
-                    placeholder={placeholder}
-                    multiline={multiline}
-                    focused={focused}
-                    setFocused={setFocused}
-                />
-            </View>
-        </View>
-    )
-}
-
-// Use the real TextInput
-import { TextInput } from 'react-native'
-function TextInputShim({ value, onChangeText, placeholder, multiline, focused, setFocused }) {
-    return (
-        <TextInput
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            placeholderTextColor={C.muted}
-            multiline={multiline}
-            style={{ color: C.text, fontSize: 13, flex: 1 }}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            textAlignVertical={multiline ? 'top' : 'center'}
-        />
     )
 }
 
@@ -113,6 +76,8 @@ export default function CapaScreen({ navigation, route }) {
     const [capaOwner, setCapaOwner] = useState('')
     const [capaDueDate, setCapaDueDate] = useState('')
     const [investigatorNotes, setInvestigatorNotes] = useState('')
+    const [forwardedToHospital, setForwardedToHospital] = useState('No')
+    const [impactDaysLost, setImpactDaysLost] = useState('')
     const [availableOwners, setAvailableOwners] = useState([])
     const [submitting, setSubmitting] = useState(false)
 
@@ -127,7 +92,20 @@ export default function CapaScreen({ navigation, route }) {
         fetchOwners()
     }, [])
 
-    const valid = rootCauseCategory && rootCauseDetail && capaAction && capaOwner && capaDueDate
+    const rootCauseError = rootCauseDetail.length > 0 && rootCauseDetail.trim().length < 15
+    const capaError = capaAction.length > 0 && capaAction.trim().length < 15
+
+    const valid = rootCauseCategory && rootCauseDetail.trim().length >= 15 && capaAction.trim().length >= 15 && capaOwner && capaDueDate
+
+    const btnAnim = useState(new Animated.Value(0))[0]
+
+    useEffect(() => {
+        Animated.timing(btnAnim, {
+            toValue: valid ? 1 : 0,
+            duration: 300,
+            useNativeDriver: true,
+        }).start()
+    }, [valid])
 
     const handleSubmit = async () => {
         if (!valid || submitting) return
@@ -153,6 +131,9 @@ export default function CapaScreen({ navigation, route }) {
                     capa_owner:    user.id,    // link to auth user (owner field is UUID)
                     capa_due_date: capaDueDate,
                     capa_status:   'pending',
+                    // Medical & Impact
+                    forwarded_to_hospital: forwardedToHospital,
+                    impact_working_days:   impactDaysLost,
                     // notes + status
                     investigator_id:    user.id,
                     investigator_notes: investigatorNotes,
@@ -223,7 +204,7 @@ export default function CapaScreen({ navigation, route }) {
                         />
                     </Field>
                     <Field label="Detailed Root Cause Description" required>
-                        <View style={[styles.input, styles.inputFocused, { height: 88, paddingTop: 11 }]}>
+                        <View style={[styles.input, styles.inputFocused, rootCauseError && styles.errorBorder, { height: 88, paddingTop: 11 }]}>
                             <TextInput
                                 value={rootCauseDetail}
                                 onChangeText={setRootCauseDetail}
@@ -234,14 +215,46 @@ export default function CapaScreen({ navigation, route }) {
                                 textAlignVertical="top"
                             />
                         </View>
+                        {rootCauseError && <Text style={styles.errorText}>Must be at least 15 characters (currently {rootCauseDetail.trim().length}).</Text>}
                     </Field>
+                </View>
+
+                {/* Medical & Impact section */}
+                <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>🏥  Medical & Impact</Text>
+                    <View style={styles.twoCol}>
+                        <View style={{ flex: 1, marginRight: 10 }}>
+                            <Field label="Forwarded to Hospital?">
+                                <SelectMenu
+                                    value={forwardedToHospital}
+                                    onChange={setForwardedToHospital}
+                                    options={['Yes', 'No']}
+                                    placeholder="Select…"
+                                />
+                            </Field>
+                        </View>
+                        <View style={{ flex: 1.2 }}>
+                            <Field label="Impact (Days Lost)">
+                                <View style={styles.input}>
+                                    <TextInput
+                                        value={impactDaysLost}
+                                        onChangeText={setImpactDaysLost}
+                                        placeholder="e.g. 0 or 3"
+                                        placeholderTextColor={C.muted}
+                                        keyboardType="numeric"
+                                        style={{ color: C.text, fontSize: 13 }}
+                                    />
+                                </View>
+                            </Field>
+                        </View>
+                    </View>
                 </View>
 
                 {/* CAPA section */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>🔧  Corrective & Preventive Action</Text>
                     <Field label="CAPA Description" required>
-                        <View style={[styles.input, { height: 88, paddingTop: 11 }]}>
+                        <View style={[styles.input, capaError && styles.errorBorder, { height: 88, paddingTop: 11 }]}>
                             <TextInput
                                 value={capaAction}
                                 onChangeText={setCapaAction}
@@ -252,6 +265,7 @@ export default function CapaScreen({ navigation, route }) {
                                 textAlignVertical="top"
                             />
                         </View>
+                        {capaError && <Text style={styles.errorText}>Must be at least 15 characters (currently {capaAction.trim().length}).</Text>}
                     </Field>
 
                     <Field label="Assigned Owner" required>
@@ -291,18 +305,20 @@ export default function CapaScreen({ navigation, route }) {
                 </View>
 
                 {/* Submit */}
-                <TouchableOpacity
-                    style={[styles.ctaBtn, (!valid || submitting) && styles.ctaDisabled]}
-                    onPress={handleSubmit}
-                    disabled={!valid || submitting}
-                    activeOpacity={0.85}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#000" />
-                    ) : (
-                        <Text style={styles.ctaBtnText}>📤  Forward to Manager Review</Text>
-                    )}
-                </TouchableOpacity>
+                <Animated.View style={{ opacity: btnAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ scale: btnAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }] }}>
+                    <TouchableOpacity
+                        style={[styles.ctaBtn, (!valid || submitting) && styles.ctaDisabled]}
+                        onPress={handleSubmit}
+                        disabled={!valid || submitting}
+                        activeOpacity={0.85}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#000" />
+                        ) : (
+                            <Text style={styles.ctaBtnText}>📤  Forward to Manager Review</Text>
+                        )}
+                    </TouchableOpacity>
+                </Animated.View>
 
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
                     <Text style={styles.backText}>← Back</Text>
@@ -343,6 +359,11 @@ const styles = StyleSheet.create({
     input:       { backgroundColor: C.surface, borderRadius: 11, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1.5, borderColor: C.border },
     inputFocused:{ borderColor: '#3B82F677' },
 
+    errorBorder: { borderColor: C.red + '77', backgroundColor: C.red + '11' },
+    errorText:   { fontSize: 11, color: C.red, fontWeight: '600', marginTop: 4 },
+
+    twoCol: { flexDirection: 'row', alignItems: 'flex-start' },
+
     selectBtn:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     selectText: { fontSize: 13, color: C.text, flex: 1 },
     selectArrow:{ fontSize: 10, color: C.muted, marginLeft: 8 },
@@ -353,7 +374,7 @@ const styles = StyleSheet.create({
     dropdownText:     { fontSize: 13, color: C.text },
 
     ctaBtn:     { backgroundColor: C.amber, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 10, shadowColor: C.amber, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 },
-    ctaDisabled:{ opacity: 0.4, shadowOpacity: 0, elevation: 0 },
+    ctaDisabled:{ shadowOpacity: 0, elevation: 0 },
     ctaBtnText: { color: '#000', fontWeight: '900', fontSize: 15 },
     backBtn:    { paddingVertical: 14, alignItems: 'center', borderRadius: 14, borderWidth: 1.5, borderColor: C.border },
     backText:   { color: C.sub, fontWeight: '700', fontSize: 14 },

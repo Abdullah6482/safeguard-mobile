@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, TextInput, Alert, Image,
+    ScrollView, TextInput, Alert, Image, Animated
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -27,7 +27,17 @@ export default function DetailsScreen({ navigation, route }) {
         }
     }, [route.params?.photoUri])
 
-    const isValid = form.description && form.immediateAction
+    const isValid = form.description.trim().length >= 15 && form.immediateAction.trim().length > 0
+
+    const btnAnim = useState(new Animated.Value(0))[0]
+
+    useEffect(() => {
+        Animated.timing(btnAnim, {
+            toValue: isValid ? 1 : 0,
+            duration: 300,
+            useNativeDriver: false,
+        }).start()
+    }, [isValid])
 
     const handleContinue = () => {
         if (!isValid) {
@@ -35,8 +45,7 @@ export default function DetailsScreen({ navigation, route }) {
             return
         }
         navigation.navigate('RiskMatrix', {
-            context,
-            incidentType,
+            ...(route.params || {}),
             details: form,
         })
     }
@@ -70,7 +79,7 @@ export default function DetailsScreen({ navigation, route }) {
                             styles.uploadBox,
                             form.photoAttached && styles.uploadBoxDone,
                         ]}
-                        onPress={() => navigation.navigate('Camera')}
+                        onPress={() => navigation.navigate('Camera', { ...route.params })}
                         activeOpacity={0.8}
                     >
                         {form.photoUri ? (
@@ -95,8 +104,14 @@ export default function DetailsScreen({ navigation, route }) {
                         onChangeText={v => set('description', v)}
                         placeholder="Describe what you observed — be specific about location, conditions, equipment involved…"
                         rows={4}
+                        error={form.description.length > 0 && form.description.trim().length < 15}
                     />
-                    <Text style={styles.charCount}>{form.description.length} / 500</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                        {form.description.length > 0 && form.description.trim().length < 15 ? (
+                            <Text style={styles.errorText}>Must be at least 15 characters (currently {form.description.trim().length}).</Text>
+                        ) : <Text />}
+                        <Text style={[styles.charCount, form.description.length > 0 && form.description.trim().length < 15 && { color: C.red }]}>{form.description.length} / 500</Text>
+                    </View>
                 </SectionCard>
 
                 {/* ── Location ────────────────────────────────── */}
@@ -150,6 +165,7 @@ export default function DetailsScreen({ navigation, route }) {
                         onChangeText={v => set('immediateAction', v)}
                         placeholder="e.g. Isolated power supply, applied first aid, cleaned spill, erected barrier, notified shift lead…"
                         rows={3}
+                        error={form.immediateAction.length === 0}
                     />
                     {!form.immediateAction && (
                         <Text style={styles.warning}>
@@ -159,14 +175,16 @@ export default function DetailsScreen({ navigation, route }) {
                 </SectionCard>
 
                 {/* ── Buttons ─────────────────────────────────── */}
-                <TouchableOpacity
-                    style={[styles.btnPrimary, !isValid && styles.btnDisabled]}
-                    onPress={handleContinue}
-                    disabled={!isValid}
-                    activeOpacity={0.85}
-                >
-                    <Text style={styles.btnPrimaryText}>Continue to Risk Assessment  →</Text>
-                </TouchableOpacity>
+                <Animated.View style={{ opacity: btnAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ scale: btnAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }] }}>
+                    <TouchableOpacity
+                        style={[styles.btnPrimary, !isValid && styles.btnDisabled]}
+                        onPress={handleContinue}
+                        disabled={!isValid}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={styles.btnPrimaryText}>Continue to Risk Assessment  →</Text>
+                    </TouchableOpacity>
+                </Animated.View>
 
                 <TouchableOpacity
                     style={styles.btnSecondary}
@@ -225,11 +243,11 @@ function SingleLineBox({ value, onChangeText, placeholder }) {
     )
 }
 
-function MultilineBox({ value, onChangeText, placeholder, rows = 3 }) {
+function MultilineBox({ value, onChangeText, placeholder, rows = 3, error }) {
     const [focused, setFocused] = useState(false)
     return (
         <TextInput
-            style={[fl.input, fl.multiline, focused && fl.focused, { height: rows * 24 + 26 }]}
+            style={[fl.input, fl.multiline, focused && fl.focused, error && fl.error, { height: rows * 24 + 26 }]}
             value={value}
             onChangeText={onChangeText}
             placeholder={placeholder}
@@ -313,7 +331,8 @@ const styles = StyleSheet.create({
     locationTitleDone: { color: C.cyan },
     locationSub: { fontSize: 11, color: C.muted, marginTop: 2 },
 
-    charCount: { fontSize: 10, color: C.muted, textAlign: 'right', marginTop: 4 },
+    errorText: { fontSize: 11, color: C.red, fontWeight: '600', marginTop: 4 },
+    charCount: { fontSize: 10, color: C.muted, marginTop: 4 },
     hint: { fontSize: 11, color: C.muted, marginTop: 6, fontStyle: 'italic' },
     warning: { fontSize: 11, color: C.orange, fontWeight: '600', marginTop: 6 },
 
@@ -325,7 +344,7 @@ const styles = StyleSheet.create({
         shadowColor: C.blue, shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
     },
-    btnDisabled: { opacity: 0.45, shadowOpacity: 0, elevation: 0 },
+    btnDisabled: { shadowOpacity: 0, elevation: 0 },
     btnPrimaryText: { color: '#fff', fontWeight: '800', fontSize: 15 },
     btnSecondary: {
         borderRadius: 14, paddingVertical: 14,
@@ -356,6 +375,7 @@ const fl = StyleSheet.create({
     },
     multiline: { paddingTop: 13 },
     focused: { borderColor: C.blueLight + '77' },
+    error: { borderColor: C.red + '77', backgroundColor: C.red + '11' },
 })
 
 const sc = StyleSheet.create({

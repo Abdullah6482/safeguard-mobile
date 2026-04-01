@@ -95,8 +95,8 @@ export default function RootNavigator() {
                         <Stack.Screen name="Camera" component={CameraScreen} />
                         <Stack.Screen name="RiskMatrix" component={RiskMatrixScreen} />
                         <Stack.Screen name="Success" component={SuccessScreen} />
-
                     </>
+
                 )}
 
             </Stack.Navigator>

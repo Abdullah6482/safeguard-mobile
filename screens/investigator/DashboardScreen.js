@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
     ScrollView, ActivityIndicator,
-    RefreshControl,
+    RefreshControl, Animated
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
@@ -80,9 +80,9 @@ export default function DashboardScreen({ navigation }) {
             .order('created_at', { ascending: false })
 
         // Only show incidents assigned to this investigator
-        if (reportedToValue) {
-            query.eq('reported_to', reportedToValue)
-        }
+        // if (reportedToValue) {
+        //     query.eq('reported_to', reportedToValue)
+        // }
 
         const { data, error } = await query
 
@@ -109,13 +109,7 @@ export default function DashboardScreen({ navigation }) {
     }
 
     if (loading) {
-        return (
-            <SafeAreaView style={styles.safe}>
-                <View style={styles.centered}>
-                    <ActivityIndicator color={C.amber} size="large" />
-                </View>
-            </SafeAreaView>
-        )
+        return <DashboardSkeleton />
     }
 
     return (
@@ -237,6 +231,54 @@ export default function DashboardScreen({ navigation }) {
                     })}
                 </View>
             </ScrollView>
+        </SafeAreaView>
+    )
+}
+
+function DashboardSkeleton() {
+    const fadeAnim = useState(new Animated.Value(0.3))[0]
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+                Animated.timing(fadeAnim, { toValue: 0.3, duration: 800, useNativeDriver: true })
+            ])
+        ).start()
+    }, [])
+
+    const SkeleBlock = ({ height, width, borderRadius = 8, marginBottom = 10, style }) => (
+        <Animated.View style={[{ height, width, borderRadius, backgroundColor: '#1E293B', marginBottom, opacity: fadeAnim }, style]} />
+    )
+
+    return (
+        <SafeAreaView style={styles.safe}>
+            <View style={styles.content}>
+                <View style={styles.header}>
+                    <View>
+                        <SkeleBlock height={10} width={80} />
+                        <SkeleBlock height={24} width={150} />
+                        <SkeleBlock height={12} width={120} />
+                    </View>
+                    <SkeleBlock height={44} width={44} borderRadius={13} />
+                </View>
+
+                <View style={styles.statStrip}>
+                    <SkeleBlock height={85} width="31%" borderRadius={14} />
+                    <SkeleBlock height={85} width="31%" borderRadius={14} />
+                    <SkeleBlock height={85} width="31%" borderRadius={14} />
+                </View>
+
+                <View style={[styles.filterRow, { backgroundColor: 'transparent', padding: 0 }]}>
+                    <SkeleBlock height={30} width="100%" borderRadius={14} />
+                </View>
+
+                <View style={styles.list}>
+                    <SkeleBlock height={160} width="100%" borderRadius={16} />
+                    <SkeleBlock height={160} width="100%" borderRadius={16} />
+                    <SkeleBlock height={160} width="100%" borderRadius={16} />
+                </View>
+            </View>
         </SafeAreaView>
     )
 }

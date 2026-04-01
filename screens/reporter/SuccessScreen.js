@@ -5,8 +5,18 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
+import { uploadPhoto, testStorageAccess } from '../../lib/storage'
 
 export default function SuccessScreen({ navigation, route }) {
+    console.log('--- SUCCESS SCREEN MOUNTED ---')
+    if (!route?.params) {
+        console.error('CRITICAL ERROR: SuccessScreen reached WITHOUT PARAMS!')
+        return (
+            <View style={{ flex: 1, backgroundColor: '#070B13', justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: '#fff' }}>Error: No report data received.</Text>
+            </View>
+        )
+    }
     const { context, incidentType, details, initialRisk } = route.params
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -20,28 +30,57 @@ export default function SuccessScreen({ navigation, route }) {
         try {
             const { data: { user } } = await supabase.auth.getUser()
 
-            // ── 1. Insert the incident ─────────────────────────
+            // ── DEBUG: trace what arrives ──────────────────────
+            console.log('[SuccessScreen] context:', JSON.stringify(context))
+            console.log('[SuccessScreen] incidentType:', incidentType)
+            console.log('[SuccessScreen] details:', JSON.stringify(details))
+
+            // ── 0. Test storage access first ─────────────────────
+            const { accessible, error: storageError } = await testStorageAccess()
+            if (!accessible) {
+                console.error('Storage not accessible:', storageError)
+                // Continue without photo but log the error
+            } else {
+                console.log('Storage bucket is accessible')
+            }
+
+            // ── 1. Upload photo if present ─────────────────────
+            let finalPhotoUrl = null
+            if (details?.photoUri) {
+                console.log('Photo found, uploading...', details.photoUri)
+                const { url, error: uploadError } = await uploadPhoto(details.photoUri, user.id)
+                
+                if (uploadError) {
+                    console.error('Photo upload failed:', uploadError)
+                    // Continue without photo but log the error
+                } else {
+                    finalPhotoUrl = url
+                    console.log('Photo uploaded successfully! URL:', finalPhotoUrl)
+                }
+            }
+
+            // ── 2. Insert the incident ─────────────────────────
             const { data, error: insertError } = await supabase
                 .from('incidents')
                 .insert({
                     reporter_id: user.id,
-                    incident_type: incidentType,
+                    incident_type: incidentType || 'Near Miss',
                     status: 'reported',
 
                     // Context (Phase A Step 1)
-                    work_activity: context.workActivity,
-                    reported_to: context.reportedTo,
+                    work_activity: context?.workActivity || null,
+                    reported_to: context?.reportedTo || null,
 
                     // Details (Phase A Step 3)
-                    description: details.description,
-                    location_label: details.locationLabel || null,
-                    witnesses: details.witnesses || null,
-                    immediate_action: details.immediateAction,
-                    photo_url: null, // TODO: real upload later
+                    description: details?.description || null,
+                    location_label: details?.locationLabel || null,
+                    witnesses: details?.witnesses || null,
+                    immediate_action: details?.immediateAction || null,
+                    photo_url: finalPhotoUrl,
 
                     // Initial risk (Phase A Step 4)
-                    initial_risk_x: initialRisk.x,
-                    initial_risk_y: initialRisk.y,
+                    initial_risk_x: initialRisk?.x || 1,
+                    initial_risk_y: initialRisk?.y || 1,
                 })
                 .select()
                 .single()
@@ -49,8 +88,6 @@ export default function SuccessScreen({ navigation, route }) {
             if (insertError) throw insertError
 
             setIncident(data)
-
-            // Safety points are awarded by the investigator upon approval — not here
 
         } catch (err) {
             console.error('Submit error:', err)
@@ -118,7 +155,7 @@ export default function SuccessScreen({ navigation, route }) {
                     <Text style={styles.refLabel}>REPORT REFERENCE</Text>
                     <Text style={styles.refNumber}>{incident?.reference_number || '—'}</Text>
                     <Text style={styles.refSub}>
-                        {incidentType} · {incident?.overall_risk || 'Risk not calculated'} · {details.locationLabel || 'Location not pinned'}
+                        {incidentType} · {incident?.overall_risk || 'Risk not calculated'} · {details?.locationLabel || 'Location not pinned'}
                     </Text>
                 </View>
 

@@ -47,9 +47,9 @@ export default function RiskMatrixScreen({ navigation, route }) {
 
     const handleContinue = () => {
         navigation.navigate('Success', {
-            context,
-            incidentType,
-            details,
+            ...(route.params || {}),
+
+
             initialRisk: { x: pos.x + 1, y: pos.y + 1 },
         })
     }
