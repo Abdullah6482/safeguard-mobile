@@ -151,12 +151,12 @@ export default function PillarRiskScreen({ navigation, route }) {
                         disabled={!allSet}
                         activeOpacity={0.85}
                     >
-                        <Text style={styles.ctaBtnText}>Continue to Root Cause  →</Text>
+                        <Text style={styles.ctaBtnText}>Continue to Root Cause  -&gt;</Text>
                     </TouchableOpacity>
                 </Animated.View>
 
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Text style={styles.backText}>← Back</Text>
+                    <Text style={styles.backText}>&lt;- Back</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>

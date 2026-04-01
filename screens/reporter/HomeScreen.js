@@ -5,12 +5,14 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
+import Sidebar from '../../components/Sidebar'
 
 export default function HomeScreen({ navigation }) {
     const [profile, setProfile] = useState(null)
     const [stats, setStats] = useState({ total: 0, thisMonth: 0, points: 0 })
     const [loading, setLoading] = useState(true)
     const [pulse, setPulse] = useState(false)
+    const [sidebarVisible, setSidebarVisible] = useState(false)
 
     useEffect(() => {
         loadData()
@@ -59,11 +61,36 @@ export default function HomeScreen({ navigation }) {
         return <HomeSkeleton />
     }
 
-    const streakPct = Math.min((stats.total / 20) * 100, 100)
+    let currentTitle = 'Novice Observer'
+    let nextTierPoints = 50
+    let titleColor = '#94A3B8'
+    let progressPct = (stats.points / 50) * 100
+
+    if (stats.points >= 500) {
+        currentTitle = 'Master Guardian'
+        nextTierPoints = 500
+        titleColor = '#F59E0B'
+        progressPct = 100
+    } else if (stats.points >= 300) {
+        currentTitle = 'Level 3 Observer'
+        nextTierPoints = 500
+        titleColor = '#10B981'
+        progressPct = ((stats.points - 300) / 200) * 100
+    } else if (stats.points >= 150) {
+        currentTitle = 'Level 2 Observer'
+        nextTierPoints = 300
+        titleColor = '#06B6D4'
+        progressPct = ((stats.points - 150) / 150) * 100
+    } else if (stats.points >= 50) {
+        currentTitle = 'Level 1 Observer'
+        nextTierPoints = 150
+        titleColor = '#3B82F6'
+        progressPct = ((stats.points - 50) / 100) * 100
+    }
 
     const badges = [
-        { icon: '🛡️', label: 'Guardian', earned: stats.total >= 10 },
-        { icon: '👁️', label: 'Eagle Eye', earned: stats.total >= 1 },
+        { icon: '🛡️', label: 'Guardian', earned: stats.points >= 300 },
+        { icon: '👁️', label: 'Eagle Eye', earned: stats.points >= 100 },
         { icon: '🔥', label: 'Streak Pro', earned: stats.thisMonth >= 3 },
         { icon: '📋', label: 'First Report', earned: stats.total >= 1 },
     ]
@@ -86,7 +113,7 @@ export default function HomeScreen({ navigation }) {
                         </Text>
                     </View>
                     <View style={styles.headerRight}>
-                        <TouchableOpacity style={styles.avatar} onPress={handleSignOut}>
+                        <TouchableOpacity style={styles.avatar} onPress={() => setSidebarVisible(true)}>
                             <Text style={styles.avatarText}>
                                 {profile?.full_name?.[0] || '?'}
                             </Text>
@@ -109,16 +136,18 @@ export default function HomeScreen({ navigation }) {
                     ))}
                 </View>
 
-                {/* ── Streak card ────────────────────────────── */}
+                {/* ── Safety Ranking ─────────────────────────── */}
                 <View style={styles.card}>
-                    <Text style={styles.cardLabel}>SAFETY STREAK</Text>
+                    <Text style={styles.cardLabel}>SAFETY RANKING</Text>
                     <View style={styles.progressBarBg}>
-                        <View style={[styles.progressBarFill, { width: `${streakPct}%` }]} />
+                        <View style={[styles.progressBarFill, { width: `${Math.min(progressPct, 100)}%`, backgroundColor: titleColor }]} />
                     </View>
                     <View style={styles.row}>
-                        <Text style={styles.streakText}>{stats.total} reports filed</Text>
-                        <View style={styles.pillBlue}>
-                            <Text style={styles.pillText}>Level 4 Observer</Text>
+                        <Text style={styles.streakText}>
+                            {stats.points >= 500 ? 'Highest Rank Reached!' : `${stats.points} / ${nextTierPoints} pts to rank up`}
+                        </Text>
+                        <View style={[styles.pillBlue, { borderColor: titleColor + '44', backgroundColor: titleColor + '22' }]}>
+                            <Text style={[styles.pillText, { color: titleColor }]}>{currentTitle}</Text>
                         </View>
                     </View>
                 </View>
@@ -152,6 +181,12 @@ export default function HomeScreen({ navigation }) {
                 </TouchableOpacity>
 
             </ScrollView>
+
+            <Sidebar 
+                visible={sidebarVisible} 
+                onClose={() => setSidebarVisible(false)} 
+                profile={profile} 
+            />
         </SafeAreaView>
     )
 }

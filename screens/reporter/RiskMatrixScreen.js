@@ -136,7 +136,7 @@ export default function RiskMatrixScreen({ navigation, route }) {
                     </View>
 
                     {/* X axis title */}
-                    <Text style={styles.xAxisLabel}>LIKELIHOOD →</Text>
+                    <Text style={styles.xAxisLabel}>LIKELIHOOD -&gt;</Text>
                 </View>
 
                 {/* ── Risk status card ────────────────────────── */}
@@ -195,7 +195,7 @@ export default function RiskMatrixScreen({ navigation, route }) {
                     onPress={() => navigation.goBack()}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.btnSecondaryText}>← Back</Text>
+                    <Text style={styles.btnSecondaryText}>&lt;- Back</Text>
                 </TouchableOpacity>
 
             </ScrollView>

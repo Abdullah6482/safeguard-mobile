@@ -6,10 +6,10 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
-    KeyboardAvoidingView,
     Platform,
     Alert,
 } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { supabase } from '../../lib/supabase'
 
 export default function LoginScreen() {
@@ -56,9 +56,10 @@ export default function LoginScreen() {
     }
 
     return (
-        <KeyboardAvoidingView
+        <KeyboardAwareScrollView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            contentContainerStyle={styles.contentContainer}
+            keyboardShouldPersistTaps="handled"
         >
             {/* Logo area */}
             <View style={styles.header}>
@@ -115,7 +116,7 @@ export default function LoginScreen() {
                     {loading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.buttonText}>Sign In →</Text>
+                        <Text style={styles.buttonText}>Sign In -&gt;</Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -124,7 +125,7 @@ export default function LoginScreen() {
             <Text style={styles.footer}>
                 Forgot your password? Contact your HSE Manager.
             </Text>
-        </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
     )
 }
 
@@ -132,6 +133,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#070B13',
+    },
+    contentContainer: {
+        flexGrow: 1,
         justifyContent: 'center',
         paddingHorizontal: 28,
     },

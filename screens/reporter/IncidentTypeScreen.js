@@ -90,7 +90,7 @@ export default function IncidentTypeScreen({ navigation, route }) {
                     disabled={!selected}
                     activeOpacity={0.85}
                 >
-                    <Text style={styles.btnPrimaryText}>Continue  →</Text>
+                    <Text style={styles.btnPrimaryText}>Continue  -&gt;</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -98,7 +98,7 @@ export default function IncidentTypeScreen({ navigation, route }) {
                     onPress={() => navigation.goBack()}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.btnSecondaryText}>← Back</Text>
+                    <Text style={styles.btnSecondaryText}>&lt;- Back</Text>
                 </TouchableOpacity>
 
             </ScrollView>

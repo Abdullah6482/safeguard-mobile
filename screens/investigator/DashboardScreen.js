@@ -6,6 +6,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
+import Sidebar from '../../components/Sidebar'
 
 const C = {
     bg: '#070B13', surface: '#0D1422', panel: '#121C30',
@@ -53,6 +54,7 @@ export default function DashboardScreen({ navigation }) {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [filter, setFilter] = useState('All')
+    const [sidebarVisible, setSidebarVisible] = useState(false)
 
     const fetchData = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser()
@@ -127,17 +129,25 @@ export default function DashboardScreen({ navigation }) {
                         <Text style={styles.name}>{profile?.full_name || 'Investigator'} 🔍</Text>
                         <Text style={styles.headerSub}>{profile?.job_title} · {profile?.department}</Text>
                     </View>
-                    <TouchableOpacity
-                        style={styles.notifBtn}
-                        onPress={() => supabase.auth.signOut()}
-                    >
-                        <Text style={styles.notifEmoji}>🔔</Text>
-                        {counts.pending > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>{counts.pending}</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <TouchableOpacity
+                            style={styles.notifBtn}
+                            onPress={() => console.log('Notifications opened')}
+                        >
+                            <Text style={styles.notifEmoji}>🔔</Text>
+                            {counts.pending > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{counts.pending}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={styles.headerAvatar} 
+                            onPress={() => setSidebarVisible(true)}
+                        >
+                            <Text style={styles.headerAvatarText}>{profile?.full_name?.[0] || '?'}</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Stat strip */}
@@ -231,6 +241,12 @@ export default function DashboardScreen({ navigation }) {
                     })}
                 </View>
             </ScrollView>
+
+            <Sidebar 
+                visible={sidebarVisible} 
+                onClose={() => setSidebarVisible(false)} 
+                profile={profile} 
+            />
         </SafeAreaView>
     )
 }
@@ -298,6 +314,8 @@ const styles = StyleSheet.create({
     notifEmoji: { fontSize: 20 },
     badge:      { position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: 9, backgroundColor: C.red, borderWidth: 2, borderColor: C.bg, alignItems: 'center', justifyContent: 'center' },
     badgeText:  { fontSize: 9, fontWeight: '900', color: '#fff' },
+    headerAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' },
+    headerAvatarText: { fontSize: 18, fontWeight: '800', color: '#fff' },
 
     // Stat strip
     statStrip:  { flexDirection: 'row', gap: 8, marginBottom: 16 },

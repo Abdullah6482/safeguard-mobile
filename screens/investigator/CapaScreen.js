@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, ActivityIndicator, TextInput, Animated
+    ActivityIndicator, TextInput, Animated, Platform
 } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
 
@@ -144,6 +145,26 @@ export default function CapaScreen({ navigation, route }) {
 
             if (error) throw error
 
+            // Award safety points to the reporter based on validated risk
+            let pointsToAward = 10;
+            if (overallRisk === 'Medium') pointsToAward = 25;
+            if (overallRisk === 'High') pointsToAward = 50;
+
+            if (incident.reporter_id) {
+                const { error: pointsError } = await supabase
+                    .from('safety_points')
+                    .insert({
+                        user_id: incident.reporter_id,
+                        incident_id: incident.id,
+                        points: pointsToAward,
+                        reason: `Report Verified (${overallRisk} Risk)`
+                    });
+                
+                if (pointsError) {
+                    console.error('Failed to award points:', pointsError);
+                }
+            }
+
             navigation.navigate('Forwarded', {
                 referenceNumber: incident.reference_number,
                 overallRisk,
@@ -157,11 +178,13 @@ export default function CapaScreen({ navigation, route }) {
 
     return (
         <SafeAreaView style={styles.safe}>
-            <ScrollView
+            <KeyboardAwareScrollView
                 style={styles.container}
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                enableOnAndroid={true}
+                extraScrollHeight={20}
             >
                 {/* Phase tag */}
                 <View style={styles.phaseTag}>
@@ -321,9 +344,9 @@ export default function CapaScreen({ navigation, route }) {
                 </Animated.View>
 
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Text style={styles.backText}>← Back</Text>
+                    <Text style={styles.backText}>&lt;- Back</Text>
                 </TouchableOpacity>
-            </ScrollView>
+            </KeyboardAwareScrollView>
         </SafeAreaView>
     )
 }

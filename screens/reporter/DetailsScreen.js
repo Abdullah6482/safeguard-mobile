@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, TextInput, Alert, Image, Animated
+    TextInput, Alert, Image, Animated, Platform
 } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 export default function DetailsScreen({ navigation, route }) {
@@ -52,11 +53,13 @@ export default function DetailsScreen({ navigation, route }) {
 
     return (
         <SafeAreaView style={styles.safe}>
-            <ScrollView
+            <KeyboardAwareScrollView
                 style={styles.container}
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                enableOnAndroid={true}
+                extraScrollHeight={20}
             >
 
                 {/* Phase tag */}
@@ -182,7 +185,7 @@ export default function DetailsScreen({ navigation, route }) {
                         disabled={!isValid}
                         activeOpacity={0.85}
                     >
-                        <Text style={styles.btnPrimaryText}>Continue to Risk Assessment  →</Text>
+                        <Text style={styles.btnPrimaryText}>Continue to Risk Assessment  -&gt;</Text>
                     </TouchableOpacity>
                 </Animated.View>
 
@@ -191,10 +194,10 @@ export default function DetailsScreen({ navigation, route }) {
                     onPress={() => navigation.goBack()}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.btnSecondaryText}>← Back</Text>
+                    <Text style={styles.btnSecondaryText}>&lt;- Back</Text>
                 </TouchableOpacity>
 
-            </ScrollView>
+            </KeyboardAwareScrollView>
         </SafeAreaView>
     )
 }

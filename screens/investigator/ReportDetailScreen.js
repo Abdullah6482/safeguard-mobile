@@ -109,7 +109,7 @@ export default function ReportDetailScreen({ navigation, route }) {
             >
                 {/* Back */}
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Text style={styles.backText}>← Incident List</Text>
+                    <Text style={styles.backText}>&lt;- Incident List</Text>
                 </TouchableOpacity>
 
                 {/* Header */}
@@ -227,7 +227,7 @@ export default function ReportDetailScreen({ navigation, route }) {
                         onPress={() => navigation.navigate('PillarRisk', { incident })}
                         activeOpacity={0.85}
                     >
-                        <Text style={styles.ctaBtnText}>Begin Investigation  →</Text>
+                        <Text style={styles.ctaBtnText}>Begin Investigation  -&gt;</Text>
                     </TouchableOpacity>
                 )}
             </ScrollView>

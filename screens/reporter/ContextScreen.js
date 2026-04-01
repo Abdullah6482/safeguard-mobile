@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, TextInput, Alert, ActivityIndicator
+    TextInput, Alert, ActivityIndicator, Platform
 } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
 
@@ -173,11 +174,13 @@ export default function ContextScreen({ navigation }) {
 
     return (
         <SafeAreaView style={styles.safe}>
-            <ScrollView
+            <KeyboardAwareScrollView
                 style={styles.container}
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                enableOnAndroid={true}
+                extraScrollHeight={20}
             >
 
                 {/* Phase tag */}
@@ -259,7 +262,7 @@ export default function ContextScreen({ navigation }) {
                     disabled={!isValid}
                     activeOpacity={0.85}
                 >
-                    <Text style={styles.btnPrimaryText}>Continue  →</Text>
+                    <Text style={styles.btnPrimaryText}>Continue  -&gt;</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -267,10 +270,10 @@ export default function ContextScreen({ navigation }) {
                     onPress={() => navigation.goBack()}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.btnSecondaryText}>← Back</Text>
+                    <Text style={styles.btnSecondaryText}>&lt;- Back</Text>
                 </TouchableOpacity>
 
-            </ScrollView>
+            </KeyboardAwareScrollView>
         </SafeAreaView>
     )
 }
