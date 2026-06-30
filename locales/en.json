@@ -1,0 +1,10 @@
+{
+  "app_name": "SafeGuard",
+  "report_incident": "Report Incident",
+  "investigator_dashboard": "Investigator Dashboard",
+  "incident_type": "Incident Type",
+  "risk_matrix": "Risk Matrix",
+  "submit": "Submit Report",
+  "status_open": "Open",
+  "status_closed": "Closed"
+}

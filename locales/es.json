@@ -1,0 +1,10 @@
+{
+  "app_name": "SafeGuard",
+  "report_incident": "Reportar Incidente",
+  "investigator_dashboard": "Panel de Investigador",
+  "incident_type": "Tipo de Incidente",
+  "risk_matrix": "Matriz de Riesgo",
+  "submit": "Enviar Reporte",
+  "status_open": "Abierto",
+  "status_closed": "Cerrado"
+}
