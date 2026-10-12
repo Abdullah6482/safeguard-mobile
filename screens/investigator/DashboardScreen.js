@@ -2,11 +2,12 @@ import { useEffect, useState, useCallback } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
     ScrollView, ActivityIndicator,
-    RefreshControl, Animated
+    RefreshControl, Animated, Alert
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
 import Sidebar from '../../components/Sidebar'
+import { calculateRiskScore } from '../../lib/riskCalculator'
 
 const C = {
     bg: '#070B13', surface: '#0D1422', panel: '#121C30',
@@ -31,10 +32,8 @@ const statusMeta = (s) => {
 }
 
 const riskFromXY = (x, y) => {
-    const s = x * y
-    if (s >= 15) return { label: 'High',   color: C.red }
-    if (s >= 5)  return { label: 'Medium', color: C.yellow }
-    return              { label: 'Low',    color: C.green }
+    const result = calculateRiskScore(x, y)
+    return { label: result.level, color: result.color }
 }
 
 function timeAgo(dateStr) {
@@ -65,13 +64,7 @@ export default function DashboardScreen({ navigation }) {
             .single()
         setProfile(prof)
 
-        // Build the reported_to filter value — matches what reporters see in dropdown
-        // e.g. "Omar Khalid (Shift Lead A)"
-        const reportedToValue = prof
-            ? `${prof.full_name} (${prof.job_title})`
-            : null
-
-        const query = supabase
+        let query = supabase
             .from('incidents')
             .select(`
                 id, reference_number, incident_type, status,
@@ -81,14 +74,13 @@ export default function DashboardScreen({ navigation }) {
             `)
             .order('created_at', { ascending: false })
 
-        // Only show incidents assigned to this investigator
-        // if (reportedToValue) {
-        //     query.eq('reported_to', reportedToValue)
-        // }
+        // RLS must enforce this server-side; this filter keeps the UI scoped too.
+        query = query.or(`investigator_id.eq.${user.id},investigator_id.is.null`)
 
         const { data, error } = await query
 
         if (!error) setIncidents(data || [])
+        else Alert.alert('Unable to Load Incidents', error.message)
         setLoading(false)
         setRefreshing(false)
     }, [])
@@ -132,7 +124,7 @@ export default function DashboardScreen({ navigation }) {
                     <View style={{ flexDirection: 'row', gap: 10 }}>
                         <TouchableOpacity
                             style={styles.notifBtn}
-                            onPress={() => console.log('Notifications opened')}
+                            onPress={() => Alert.alert('Investigation Queue', counts.pending ? `${counts.pending} incident${counts.pending === 1 ? '' : 's'} waiting for investigation.` : 'No pending investigations.')}
                         >
                             <Text style={styles.notifEmoji}>🔔</Text>
                             {counts.pending > 0 && (

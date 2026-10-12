@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, ActivityIndicator, Image, Modal
+    ScrollView, ActivityIndicator, Image, Modal, Alert
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
+import { calculateRiskScore } from '../../lib/riskCalculator'
+import { claimIncident } from '../../lib/investigationService'
 
 const C = {
     bg: '#070B13', surface: '#0D1422', panel: '#121C30',
@@ -17,22 +19,18 @@ const C = {
 }
 
 const CELL_COLOR = (x, y) => {
-    const s = x * y
-    if (s >= 15) return '#DC2626'
-    if (s >= 9)  return '#EA580C'
-    if (s >= 5)  return '#CA8A04'
-    return '#16A34A'
+    return calculateRiskScore(x, y).color
 }
 
 const riskFromXY = (x, y) => {
-    const s = x * y
-    if (s >= 15) return { label: 'High',   color: C.red }
-    if (s >= 5)  return { label: 'Medium', color: C.yellow }
-    return              { label: 'Low',    color: C.green }
+    const result = calculateRiskScore(x, y)
+    return { label: result.level, color: result.color }
 }
 
 const typeColor = (t) =>
     t === 'Near Miss' ? C.yellow : t === 'Potential' ? C.orange : C.red
+
+const levelColor = (level) => level === 'High' ? C.red : level === 'Medium' ? C.yellow : C.green
 
 function InfoRow({ icon, label, value }) {
     return (
@@ -59,6 +57,7 @@ export default function ReportDetailScreen({ navigation, route }) {
     const [incident, setIncident] = useState(null)
     const [loading, setLoading] = useState(true)
     const [photoModal, setPhotoModal] = useState(false)
+    const [claiming, setClaiming] = useState(false)
 
     useEffect(() => {
         const fetchIncident = async () => {
@@ -100,6 +99,20 @@ export default function ReportDetailScreen({ navigation, route }) {
     const ri = riskFromXY(incident.initial_risk_x || 1, incident.initial_risk_y || 1)
     const isClosed = incident.status === 'closed'
 
+    const beginInvestigation = async () => {
+        if (claiming) return
+        setClaiming(true)
+        try {
+            const data = await claimIncident(incident)
+            setIncident(data)
+            navigation.navigate('PillarRisk', { incident: data })
+        } catch (error) {
+            Alert.alert('Unable to Begin Investigation', error.message)
+        } finally {
+            setClaiming(false)
+        }
+    }
+
     return (
         <SafeAreaView style={styles.safe}>
             <ScrollView
@@ -123,7 +136,7 @@ export default function ReportDetailScreen({ navigation, route }) {
 
                 {/* Status pills */}
                 <View style={styles.pillRow}>
-                    <Pill label={incident.overall_risk ? incident.overall_risk + ' Risk' : ri.label + ' Risk (Initial)'} color={ri.color} />
+                    <Pill label={incident.overall_risk ? incident.overall_risk + ' Risk' : ri.label + ' Risk (Initial)'} color={incident.overall_risk ? levelColor(incident.overall_risk) : ri.color} />
                     {incident.status === 'manager_review' && <Pill label="Manager Review" color={C.orange} />}
                     {isClosed && <Pill label="Closed" color={C.green} />}
                     {incident.photo_url && <Pill label="📷 Photo" color={C.blueLight} />}
@@ -188,8 +201,8 @@ export default function ReportDetailScreen({ navigation, route }) {
                         <Pill label={ri.label} color={ri.color} />
                     </View>
                     <View style={styles.matrixGrid}>
-                        {[4, 3, 2, 1].map(y =>
-                            [1, 2, 3, 4].map(x => {
+                        {[5, 4, 3, 2, 1].map(y =>
+                            [1, 2, 3, 4, 5].map(x => {
                                 const active = incident.initial_risk_x === x && incident.initial_risk_y === y
                                 const col = CELL_COLOR(x, y)
                                 return (
@@ -224,10 +237,11 @@ export default function ReportDetailScreen({ navigation, route }) {
                 ) : (
                     <TouchableOpacity
                         style={styles.ctaBtn}
-                        onPress={() => navigation.navigate('PillarRisk', { incident })}
+                        onPress={beginInvestigation}
+                        disabled={claiming}
                         activeOpacity={0.85}
                     >
-                        <Text style={styles.ctaBtnText}>Begin Investigation  -&gt;</Text>
+                        <Text style={styles.ctaBtnText}>{claiming ? 'Claiming…' : 'Begin Investigation  ->'}</Text>
                     </TouchableOpacity>
                 )}
             </ScrollView>
@@ -286,7 +300,7 @@ const styles = StyleSheet.create({
 
     riskHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     matrixGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 10 },
-    cell:       { width: '23%', aspectRatio: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 0 },
+    cell:       { width: '18%', aspectRatio: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 0 },
     cellDot:    { fontSize: 14, color: '#ffffffcc' },
     matrixNote: { fontSize: 10, color: C.muted, fontStyle: 'italic' },
 

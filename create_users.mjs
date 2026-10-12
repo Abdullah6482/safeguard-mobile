@@ -1,54 +1,59 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://waissnnstrfjmjrczfls.supabase.co'
-const supabaseKey = 'sb_publishable_IE58a-P2Z4rORKxcpazCsQ_8ZlKrAIg'
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY
+const seedPassword = process.env.SAFEGUARD_SEED_PASSWORD
+
+if (!supabaseUrl || !supabaseKey || !seedPassword) {
+  throw new Error('Set SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, and SAFEGUARD_SEED_PASSWORD before running this development-only seed script.')
+}
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 const USERS = [
   {
-    email: 'omar.khalid@obs.com',
-    password: 'Test@1234',
+    email: 'investigator.one@example.com',
+    password: seedPassword,
     options: {
       data: {
-        full_name: 'Omar Khalid',
-        job_title: 'Shift Lead A',
-        department: 'Production',
+        full_name: 'Demo Investigator One',
+        job_title: 'Shift Lead',
+        department: 'Operations',
         role: 'investigator'
       }
     }
   },
   {
-    email: 'fatima.hassan@obs.com',
-    password: 'Test@1234',
+    email: 'investigator.two@example.com',
+    password: seedPassword,
     options: {
       data: {
-        full_name: 'Fatima Hassan',
-        job_title: 'Shift Lead B',
-        department: 'Quality Control',
+        full_name: 'Demo Investigator Two',
+        job_title: 'Safety Specialist',
+        department: 'HSE',
         role: 'investigator'
       }
     }
   },
   {
-    email: 'khalid.nasser@obs.com',
-    password: 'Test@1234',
+    email: 'investigator.three@example.com',
+    password: seedPassword,
     options: {
       data: {
-        full_name: 'Khalid Nasser',
-        job_title: 'Production Manager',
-        department: 'Production',
+        full_name: 'Demo Investigator Three',
+        job_title: 'Operations Supervisor',
+        department: 'Operations',
         role: 'investigator'
       }
     }
   },
   {
-    email: 'sara.ahmed@obs.com',
-    password: 'Test@1234',
+    email: 'investigator.four@example.com',
+    password: seedPassword,
     options: {
       data: {
-        full_name: 'Sara Ahmed',
-        job_title: 'QC Lead',
-        department: 'Quality Control',
+        full_name: 'Demo Investigator Four',
+        job_title: 'Quality Lead',
+        department: 'Quality',
         role: 'investigator'
       }
     }

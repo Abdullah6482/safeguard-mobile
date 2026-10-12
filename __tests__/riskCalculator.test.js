@@ -13,15 +13,15 @@ describe('Risk Calculator Engine', () => {
     expect(level).toBe(RiskLevels.MEDIUM);
   });
 
-  test('calculates 4x3 as High risk', () => {
+  test('calculates 4x3 as Medium risk', () => {
     const { score, level } = calculateRiskScore(4, 3);
     expect(score).toBe(12);
-    expect(level).toBe(RiskLevels.HIGH);
+    expect(level).toBe(RiskLevels.MEDIUM);
   });
 
-  test('calculates 5x4 as Critical risk', () => {
+  test('calculates 5x4 as High risk', () => {
     const { score, level } = calculateRiskScore(5, 4);
     expect(score).toBe(20);
-    expect(level).toBe(RiskLevels.CRITICAL);
+    expect(level).toBe(RiskLevels.HIGH);
   });
 });

@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import * as Location from 'expo-location'
 
 export default function DetailsScreen({ navigation, route }) {
     const { context, incidentType } = route.params
@@ -15,9 +16,12 @@ export default function DetailsScreen({ navigation, route }) {
         photoUri: null,
         locationPinned: false,
         locationLabel: '',
+        latitude: null,
+        longitude: null,
         witnesses: '',
         immediateAction: '',
     })
+    const [locating, setLocating] = useState(false)
 
     const set = (key, value) => setForm(f => ({ ...f, [key]: value }))
 
@@ -49,6 +53,30 @@ export default function DetailsScreen({ navigation, route }) {
             ...(route.params || {}),
             details: form,
         })
+    }
+
+    const captureLocation = async () => {
+        setLocating(true)
+        try {
+            const permission = await Location.requestForegroundPermissionsAsync()
+            if (permission.status !== 'granted') {
+                Alert.alert('Location Permission', 'Location permission is required to attach GPS coordinates.')
+                return
+            }
+            const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
+            const { latitude, longitude } = position.coords
+            let label = `${latitude.toFixed(5)}°, ${longitude.toFixed(5)}°`
+            try {
+                const places = await Location.reverseGeocodeAsync({ latitude, longitude })
+                const p = places[0]
+                if (p) label = [p.name, p.street, p.city].filter(Boolean).join(', ') || label
+            } catch { /* coordinates remain a valid fallback */ }
+            setForm(current => ({ ...current, locationPinned: true, locationLabel: label, latitude, longitude }))
+        } catch (error) {
+            Alert.alert('Location Error', error.message || 'Unable to determine your current location.')
+        } finally {
+            setLocating(false)
+        }
     }
 
     return (
@@ -124,10 +152,7 @@ export default function DetailsScreen({ navigation, route }) {
                             styles.locationBox,
                             form.locationPinned && styles.locationBoxDone,
                         ]}
-                        onPress={() => {
-                            set('locationPinned', true)
-                            set('locationLabel', 'Building B · Floor 2 · Zone C3')
-                        }}
+                        onPress={captureLocation}
                         activeOpacity={0.8}
                     >
                         <Text style={styles.locationIcon}>
@@ -138,7 +163,7 @@ export default function DetailsScreen({ navigation, route }) {
                                 styles.locationTitle,
                                 form.locationPinned && styles.locationTitleDone,
                             ]}>
-                                {form.locationPinned ? form.locationLabel : 'Pin Location on Map'}
+                                {locating ? 'Locating…' : form.locationPinned ? form.locationLabel : 'Attach Current Location'}
                             </Text>
                             {!form.locationPinned && (
                                 <Text style={styles.locationSub}>

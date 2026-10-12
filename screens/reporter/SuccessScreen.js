@@ -4,8 +4,9 @@ import {
     ScrollView, ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { supabase } from '../../lib/supabase'
-import { uploadPhoto, testStorageAccess } from '../../lib/storage'
+import { OfflineQueue } from '../../lib/offlineQueue'
+import { isOnline } from '../../lib/networkMonitor'
+import { createSubmissionId, submitIncident } from '../../lib/reportService'
 
 export default function SuccessScreen({ navigation, route }) {
     console.log('--- SUCCESS SCREEN MOUNTED ---')
@@ -21,6 +22,8 @@ export default function SuccessScreen({ navigation, route }) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [incident, setIncident] = useState(null)
+    const [queued, setQueued] = useState(false)
+    const [submissionId] = useState(() => route.params.clientSubmissionId || createSubmissionId())
 
     useEffect(() => {
         submitReport()
@@ -28,70 +31,24 @@ export default function SuccessScreen({ navigation, route }) {
 
     const submitReport = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser()
-
-            // ── DEBUG: trace what arrives ──────────────────────
-            console.log('[SuccessScreen] context:', JSON.stringify(context))
-            console.log('[SuccessScreen] incidentType:', incidentType)
-            console.log('[SuccessScreen] details:', JSON.stringify(details))
-
-            // ── 0. Test storage access first ─────────────────────
-            const { accessible, error: storageError } = await testStorageAccess()
-            if (!accessible) {
-                console.error('Storage not accessible:', storageError)
-                // Continue without photo but log the error
-            } else {
-                console.log('Storage bucket is accessible')
+            const payload = { clientSubmissionId: submissionId, context, incidentType, details, initialRisk }
+            if (!(await isOnline())) {
+                await OfflineQueue.enqueue(payload)
+                setQueued(true)
+                setIncident({ reference_number: `Pending · ${submissionId.slice(-8)}` })
+                return
             }
-
-            // ── 1. Upload photo if present ─────────────────────
-            let finalPhotoUrl = null
-            if (details?.photoUri) {
-                console.log('Photo found, uploading...', details.photoUri)
-                const { url, error: uploadError } = await uploadPhoto(details.photoUri, user.id)
-                
-                if (uploadError) {
-                    console.error('Photo upload failed:', uploadError)
-                    // Continue without photo but log the error
-                } else {
-                    finalPhotoUrl = url
-                    console.log('Photo uploaded successfully! URL:', finalPhotoUrl)
-                }
-            }
-
-            // ── 2. Insert the incident ─────────────────────────
-            const { data, error: insertError } = await supabase
-                .from('incidents')
-                .insert({
-                    reporter_id: user.id,
-                    incident_type: incidentType || 'Near Miss',
-                    status: 'reported',
-
-                    // Context (Phase A Step 1)
-                    work_activity: context?.workActivity || null,
-                    reported_to: context?.reportedTo || null,
-
-                    // Details (Phase A Step 3)
-                    description: details?.description || null,
-                    location_label: details?.locationLabel || null,
-                    witnesses: details?.witnesses || null,
-                    immediate_action: details?.immediateAction || null,
-                    photo_url: finalPhotoUrl,
-
-                    // Initial risk (Phase A Step 4)
-                    initial_risk_x: initialRisk?.x || 1,
-                    initial_risk_y: initialRisk?.y || 1,
-                })
-                .select()
-                .single()
-
-            if (insertError) throw insertError
-
-            setIncident(data)
+            setIncident(await submitIncident(payload))
 
         } catch (err) {
             console.error('Submit error:', err)
-            setError(err.message)
+            if (err.retryable) {
+                await OfflineQueue.enqueue({ clientSubmissionId: submissionId, context, incidentType, details, initialRisk })
+                setQueued(true)
+                setIncident({ reference_number: `Pending · ${submissionId.slice(-8)}` })
+            } else {
+                setError(err.message)
+            }
         } finally {
             setLoading(false)
         }
@@ -147,8 +104,8 @@ export default function SuccessScreen({ navigation, route }) {
                 </View>
 
                 {/* Title */}
-                <Text style={styles.title}>Great Catch!</Text>
-                <Text style={styles.subtitle}>Your report has been submitted successfully.</Text>
+                <Text style={styles.title}>{queued ? 'Saved Offline' : 'Great Catch!'}</Text>
+                <Text style={styles.subtitle}>{queued ? 'Your report is safely queued and will sync when connectivity returns.' : 'Your report has been submitted successfully.'}</Text>
 
                 {/* Reference number */}
                 <View style={styles.refBox}>

@@ -103,24 +103,18 @@ function SectionCard({ icon, title, children }) {
 
 // ── Screen ─────────────────────────────────────────────────────────────────
 
-const DEPARTMENTS = ['Production', 'Quality Control', 'Logistics', 'Engineering', 'HR']
-const SUPERVISORS = [
-    'Omar Khalid (Shift Lead A)',
-    'Fatima Hassan (Shift Lead B)',
-    'Khalid Nasser (Production Mgr)',
-    'Sara Ahmed (QC Lead)',
-]
-
 export default function ContextScreen({ navigation }) {
     const [form, setForm] = useState({
         reporterId: '',
         jobTitle: '',
         department: '',
-        dateTime: new Date().toLocaleString(),
+        dateTime: new Date().toISOString(),
         workActivity: '',
         reportedTo: '',
+        reportedToId: null,
     })
     const [loading, setLoading] = useState(true)
+    const [supervisors, setSupervisors] = useState([])
 
     // ── Fetch profile on mount ─────────────────────────────
     useEffect(() => {
@@ -141,6 +135,14 @@ export default function ContextScreen({ navigation }) {
                     department: profile.department || '',
                 }))
             }
+            const { data: owners } = await supabase
+                .from('profiles')
+                .select('id, full_name, job_title')
+                .eq('role', 'investigator')
+            setSupervisors((owners || []).map(p => ({
+                id: p.id,
+                label: `${p.full_name} (${p.job_title || 'HSE'})`,
+            })))
             setLoading(false)
         }
 
@@ -217,12 +219,9 @@ export default function ContextScreen({ navigation }) {
                     </View>
                     <View style={styles.fieldGap}>
                         <FieldLabel label="Department" required />
-                        <Dropdown
-                            value={form.department}
-                            options={DEPARTMENTS}
-                            onSelect={v => set('department', v)}
-                            placeholder="Select department…"
-                        />
+                        <View style={field.inputReadonly}>
+                            <Text style={field.inputReadonlyText}>{form.department || 'Not assigned in profile'}</Text>
+                        </View>
                     </View>
                 </SectionCard>
 
@@ -230,7 +229,7 @@ export default function ContextScreen({ navigation }) {
                 <SectionCard icon="🕐" title="Temporal Data">
                     <FieldLabel label="Date & Time of Incident" required />
                     <View style={field.inputReadonly}>
-                        <Text style={field.inputReadonlyText}>{form.dateTime}</Text>
+                            <Text style={field.inputReadonlyText}>{new Date(form.dateTime).toLocaleString()}</Text>
                     </View>
                     <Text style={styles.hint}>Defaults to now. You can adjust if the incident happened earlier.</Text>
 
@@ -249,9 +248,13 @@ export default function ContextScreen({ navigation }) {
                     <FieldLabel label="Reported To (Shift Lead / Supervisor)" required />
                     <Dropdown
                         value={form.reportedTo}
-                        options={SUPERVISORS}
-                        onSelect={v => set('reportedTo', v)}
-                        placeholder="Select supervisor…"
+                        options={supervisors.map(s => s.label)}
+                        onSelect={v => setForm(f => ({
+                            ...f,
+                            reportedTo: v,
+                            reportedToId: supervisors.find(s => s.label === v)?.id || null,
+                        }))}
+                        placeholder={supervisors.length ? 'Select investigator…' : 'No investigators available'}
                     />
                 </SectionCard>
 

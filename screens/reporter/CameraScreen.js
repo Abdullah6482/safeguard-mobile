@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react'
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Image } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as ImagePicker from 'expo-image-picker'
 import { Ionicons } from '@expo/vector-icons'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function CameraScreen({ navigation, route }) {
     const [facing, setFacing] = useState('back')
@@ -83,39 +83,38 @@ export default function CameraScreen({ navigation, route }) {
                 facing={facing} 
                 enableTorch={flash === 'on'}
                 ref={cameraRef}
-            >
-                {/* ── Top Controls ── */}
-                <View style={[styles.topControls, { paddingTop: Math.max(insets.top, 16) }]}>
-                    <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
-                        <Ionicons name="close" size={28} color="white" />
-                    </TouchableOpacity>
+            />
 
-                    <TouchableOpacity style={styles.iconButton} onPress={toggleFlash}>
-                        {flash === 'on' ? (
-                            <Ionicons name="flash" size={24} color="#FBBF24" />
-                        ) : flash === 'auto' ? (
-                            <Ionicons name="flash-outline" size={24} color="white" />
-                        ) : (
-                            <Ionicons name="flash-off" size={24} color="white" />
-                        )}
-                    </TouchableOpacity>
-                </View>
+            {/* CameraView does not accept children; controls are layered siblings. */}
+            <View style={[styles.topControls, { paddingTop: Math.max(insets.top, 16) }]}>
+                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
+                    <Ionicons name="close" size={28} color="white" />
+                </TouchableOpacity>
 
-                {/* ── Bottom Controls ── */}
-                <View style={styles.bottomControls}>
-                    <TouchableOpacity style={styles.galleryButton} onPress={pickImage}>
-                        <Ionicons name="image-outline" size={28} color="white" />
-                    </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton} onPress={toggleFlash}>
+                    {flash === 'on' ? (
+                        <Ionicons name="flash" size={24} color="#FBBF24" />
+                    ) : flash === 'auto' ? (
+                        <Ionicons name="flash-outline" size={24} color="white" />
+                    ) : (
+                        <Ionicons name="flash-off" size={24} color="white" />
+                    )}
+                </TouchableOpacity>
+            </View>
 
-                    <TouchableOpacity style={styles.shutterButton} onPress={takePicture}>
-                        <View style={styles.shutterInner} />
-                    </TouchableOpacity>
+            <View style={[styles.bottomControls, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+                <TouchableOpacity style={styles.galleryButton} onPress={pickImage}>
+                    <Ionicons name="image-outline" size={28} color="white" />
+                </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.flipButton} onPress={toggleFacing}>
-                        <Ionicons name="camera-reverse-outline" size={30} color="white" />
-                    </TouchableOpacity>
-                </View>
-            </CameraView>
+                <TouchableOpacity style={styles.shutterButton} onPress={takePicture}>
+                    <View style={styles.shutterInner} />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.flipButton} onPress={toggleFacing}>
+                    <Ionicons name="camera-reverse-outline" size={30} color="white" />
+                </TouchableOpacity>
+            </View>
         </View>
     )
 }
@@ -127,7 +126,6 @@ const styles = StyleSheet.create({
     },
     camera: {
         flex: 1,
-        justifyContent: 'space-between',
     },
     permissionContainer: {
         flex: 1,
@@ -165,6 +163,10 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     topControls: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
@@ -183,10 +185,13 @@ const styles = StyleSheet.create({
         color: '#FFF',
     },
     bottomControls: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'center',
-        paddingBottom: 50,
         paddingHorizontal: 20,
         backgroundColor: 'rgba(0,0,0,0.4)',
         paddingTop: 20,

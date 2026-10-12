@@ -4,26 +4,20 @@ import {
     ScrollView, Dimensions,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { calculateRiskScore, LIKELIHOOD_LABELS, SEVERITY_LABELS } from '../../lib/riskCalculator'
 
 // ── Risk helpers ───────────────────────────────────────────────────────────
 
-const LIKELIHOOD = ['Rare', 'Unlikely', 'Possible', 'Likely']
-const SEVERITY = ['Minor', 'Moderate', 'Major', 'Critical']
+const LIKELIHOOD = LIKELIHOOD_LABELS
+const SEVERITY = SEVERITY_LABELS
 
 const cellColor = (x, y) => {
-    const score = (x + 1) * (y + 1)
-    if (score <= 2) return '#16A34A'
-    if (score <= 6) return '#CA8A04'
-    if (score <= 9) return '#EA580C'
-    return '#DC2626'
+    return calculateRiskScore(x + 1, y + 1).color
 }
 
 const riskInfo = (x, y) => {
-    const score = (x + 1) * (y + 1)
-    if (score <= 2) return { label: 'Low Risk', color: '#10B981' }
-    if (score <= 6) return { label: 'Medium Risk', color: '#F59E0B' }
-    if (score <= 9) return { label: 'High Risk', color: '#F97316' }
-    return { label: 'Critical Risk', color: '#EF4444' }
+    const result = calculateRiskScore(x + 1, y + 1)
+    return { label: `${result.level} Risk`, color: result.color }
 }
 
 // Screen width used to calculate a responsive cell size
@@ -32,9 +26,9 @@ const ROW_LABEL_W = 8
 const Y_AXIS_W = 14
 const PADDING = 20 * 2   // content padding left+right
 const CARD_PAD = 18 * 2   // matrixCard padding left+right
-const GAP = 5// marginLeft per cell (4 cells)
+const GAP = 5
 const CELL_SIZE = Math.floor(
-    (SCREEN_W - PADDING - CARD_PAD - Y_AXIS_W - ROW_LABEL_W - GAP * 4) / 4
+    (SCREEN_W - PADDING - CARD_PAD - Y_AXIS_W - ROW_LABEL_W - GAP * 5) / 5
 )
 
 // ── Screen ─────────────────────────────────────────────────────────────────
@@ -87,14 +81,14 @@ export default function RiskMatrixScreen({ navigation, route }) {
 
                         {/* Grid */}
                         <View style={styles.gridWrapper}>
-                            {[3, 2, 1, 0].map(y => (
+                            {[4, 3, 2, 1, 0].map(y => (
                                 <View key={y} style={styles.gridRow}>
 
                                     {/* Row label */}
                                     <View style={[styles.rowDot, { backgroundColor: cellColor(0, y) }]} />
 
                                     {/* Cells */}
-                                    {[0, 1, 2, 3].map(x => {
+                                    {[0, 1, 2, 3, 4].map(x => {
                                         const active = pos.x === x && pos.y === y
                                         const col = cellColor(x, y)
                                         return (

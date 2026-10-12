@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ActivityIndicator, TextInput, Animated, Platform
+    ActivityIndicator, TextInput, Animated, Platform, Alert
 } from 'react-native'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
+import { submitInvestigation } from '../../lib/investigationService'
 
 const C = {
     bg: '#070B13', surface: '#0D1422', panel: '#121C30',
@@ -86,9 +87,9 @@ export default function CapaScreen({ navigation, route }) {
         const fetchOwners = async () => {
             const { data } = await supabase
                 .from('profiles')
-                .select('full_name, job_title')
+                .select('id, full_name, job_title')
                 .in('role', ['investigator', 'manager'])
-            if (data) setAvailableOwners(data.map(p => `${p.full_name} (${p.job_title})`))
+            if (data) setAvailableOwners(data.map(p => ({ id: p.id, label: `${p.full_name} (${p.job_title})` })))
         }
         fetchOwners()
     }, [])
@@ -96,7 +97,9 @@ export default function CapaScreen({ navigation, route }) {
     const rootCauseError = rootCauseDetail.length > 0 && rootCauseDetail.trim().length < 15
     const capaError = capaAction.length > 0 && capaAction.trim().length < 15
 
-    const valid = rootCauseCategory && rootCauseDetail.trim().length >= 15 && capaAction.trim().length >= 15 && capaOwner && capaDueDate
+    const dueDate = /^\d{4}-\d{2}-\d{2}$/.test(capaDueDate) ? new Date(`${capaDueDate}T23:59:59`) : null
+    const dueDateValid = dueDate && !Number.isNaN(dueDate.getTime()) && dueDate >= new Date()
+    const valid = rootCauseCategory && rootCauseDetail.trim().length >= 15 && capaAction.trim().length >= 15 && capaOwner && dueDateValid
 
     const btnAnim = useState(new Animated.Value(0))[0]
 
@@ -113,57 +116,13 @@ export default function CapaScreen({ navigation, route }) {
         setSubmitting(true)
 
         try {
-            const { data: { user } } = await supabase.auth.getUser()
-
-            const { error } = await supabase
-                .from('incidents')
-                .update({
-                    // Phase B — risk pillars
-                    pillar_people:      pillarRatings.people,
-                    pillar_asset:       pillarRatings.asset,
-                    pillar_environment: pillarRatings.environment,
-                    pillar_reputation:  pillarRatings.reputation,
-                    overall_risk:       overallRisk,
-                    // root cause
-                    root_cause_category: rootCauseCategory,
-                    root_cause_detail:   rootCauseDetail,
-                    // CAPA
-                    capa_action:   capaAction,
-                    capa_owner:    user.id,    // link to auth user (owner field is UUID)
-                    capa_due_date: capaDueDate,
-                    capa_status:   'pending',
-                    // Medical & Impact
-                    forwarded_to_hospital: forwardedToHospital,
-                    impact_working_days:   impactDaysLost,
-                    // notes + status
-                    investigator_id:    user.id,
-                    investigator_notes: investigatorNotes,
-                    status:             'manager_review',
-                    updated_at:         new Date().toISOString(),
-                })
-                .eq('id', incident.id)
-
-            if (error) throw error
-
-            // Award safety points to the reporter based on validated risk
-            let pointsToAward = 10;
-            if (overallRisk === 'Medium') pointsToAward = 25;
-            if (overallRisk === 'High') pointsToAward = 50;
-
-            if (incident.reporter_id) {
-                const { error: pointsError } = await supabase
-                    .from('safety_points')
-                    .insert({
-                        user_id: incident.reporter_id,
-                        incident_id: incident.id,
-                        points: pointsToAward,
-                        reason: `Report Verified (${overallRisk} Risk)`
-                    });
-                
-                if (pointsError) {
-                    console.error('Failed to award points:', pointsError);
-                }
-            }
+            const selectedOwner = availableOwners.find(owner => owner.label === capaOwner)
+            if (!selectedOwner) throw new Error('Select a valid CAPA owner.')
+            await submitInvestigation(incident, {
+                pillarRatings, overallRisk, rootCauseCategory, rootCauseDetail,
+                capaAction, capaOwnerId: selectedOwner.id, capaDueDate,
+                forwardedToHospital, impactWorkingDays: impactDaysLost, investigatorNotes,
+            })
 
             navigation.navigate('Forwarded', {
                 referenceNumber: incident.reference_number,
@@ -171,6 +130,7 @@ export default function CapaScreen({ navigation, route }) {
             })
         } catch (err) {
             console.error('CAPA submit error:', err)
+            Alert.alert('Submission Failed', err.message || 'The investigation could not be submitted. Please try again.')
         } finally {
             setSubmitting(false)
         }
@@ -295,7 +255,7 @@ export default function CapaScreen({ navigation, route }) {
                         <SelectMenu
                             value={capaOwner}
                             onChange={setCapaOwner}
-                            options={availableOwners.length > 0 ? availableOwners : ['Omar Khalid (Shift Lead)', 'Fatima Hassan (QC Lead)', 'HSE Officer']}
+                            options={availableOwners.map(owner => owner.label)}
                             placeholder="Assign to…"
                         />
                     </Field>

@@ -1,53 +1,147 @@
-# 🛡️ SafeGuard Mobile
+# SafeGuard Mobile
 
-**Enterprise Health, Safety, and Environment (HSE) Incident Management & Investigation Platform**
+<p align="center">
+  <img src="docs/assets/safeguard-mobile-banner.svg" alt="SafeGuard Mobile — report, investigate, prevent" width="100%">
+</p>
 
-[![CI](https://github.com/Abdullah6482/safeguard-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/Abdullah6482/safeguard-mobile/actions/workflows/ci.yml)
-[![Expo](https://img.shields.io/badge/Expo-v55.0-000020?logo=expo&logoColor=white)](https://expo.dev)
-[![React Native](https://img.shields.io/badge/React%20Native-0.83-61DAFB?logo=react&logoColor=black)](https://reactnative.dev)
-[![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/Abdullah6482/safeguard-mobile/actions/workflows/ci.yml"><img src="https://github.com/Abdullah6482/safeguard-mobile/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo&logoColor=white" alt="Expo SDK 57">
+  <img src="https://img.shields.io/badge/React%20Native-0.86-61DAFB?logo=react&logoColor=111827" alt="React Native 0.86">
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white" alt="Supabase">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-F4B942" alt="MIT license"></a>
+</p>
 
----
+SafeGuard Mobile is an offline-first HSE incident reporting and investigation application for field teams. Reporters can capture an event in minutes—even without connectivity—while investigators claim cases, assess four dimensions of impact, define corrective action, and forward a complete record for management review.
 
-## 🎯 Purpose & Capabilities
+The companion [SafeGuard Web portal](https://github.com/Abdullah6482/safeguard-web) completes the lifecycle with manager decisions, analytics, and portfolio governance.
 
-SafeGuard Mobile enables industrial and corporate field personnel to rapidly document, photograph, assess, and submit occupational safety incidents, near-misses, and environmental hazards.
+## Product preview
 
-### ✨ Key Features
+<p align="center">
+  <img src="docs/screenshots/login.jpg" alt="SafeGuard Mobile sign-in screen" width="320">
+</p>
 
-- **Dual-Role Interface**: Tailored workflows for on-site **Reporters** and compliance **Investigators**.
-- **Offline-First Synchronization**: Enqueue safety reports with evidence photos locally when in remote locations.
-- **Dynamic 5x5 Risk Matrix**: Instant probability and severity calculations with automated hazard grading.
-- **4 Pillars Evaluation**: Evaluate impact across **People**, **Assets**, **Environment**, and **Reputation**.
-- **CAPA Action Tracking**: Assign corrective and preventive actions with due dates and progress tracking.
-- **Evidence Vault**: Direct photo capture, camera controls, and thumbnail grid previews.
-- **Audit History**: Immutable chronological tracking of all safety investigations.
-- **Multilingual Support**: English, Spanish, and Arabic localized safety vocabularies.
+## Two role-specific experiences
 
----
+| Reporter | Investigator |
+|---|---|
+| Guided incident submission | Assigned and unassigned investigation queues |
+| Camera or gallery evidence | Atomic incident claiming |
+| GPS and reverse-geocoded location | Evidence and reporter-context review |
+| 5×5 initial risk assessment | People, Asset, Environment, and Reputation scoring |
+| Durable offline queue | Root-cause and CAPA documentation |
+| Safety points and achievements | Audited handoff to manager review |
 
-## 🚀 Getting Started
+## Field workflow
 
-```bash
-# Install dependencies
-npm install
-
-# Start Expo development server
-npx expo start
+```mermaid
+flowchart LR
+    A[Context] --> B[Incident type]
+    B --> C[Details + location]
+    C --> D[Photo evidence]
+    D --> E[5×5 risk matrix]
+    E --> F{Online?}
+    F -->|Yes| G[Submit to Supabase]
+    F -->|No| H[Durable local queue]
+    H -->|Connectivity returns| G
+    G --> I[Investigator claims]
+    I --> J[Four-pillar assessment]
+    J --> K[Root cause + CAPA]
+    K --> L[Manager review]
 ```
 
----
+## Reliability by design
 
-## 🧪 Testing
+- Evidence is copied into application-owned storage before offline queuing.
+- Every report receives a stable `client_submission_id` for idempotent retries.
+- Pending work synchronizes at startup and whenever the app becomes active.
+- Retryable failures use exponential backoff with jitter.
+- Permanently invalid items are quarantined so one report cannot block the queue.
+- Claiming and investigation submission run through atomic PostgreSQL functions.
+- Safety points and audit records are written in the same transaction as investigation completion.
 
-```bash
-# Run unit tests
-npm test
+## Architecture
+
+```text
+Expo SDK 57 + React Native 0.86
+              │
+              ├── Role-aware React Navigation stacks
+              ├── Reporter and investigator screens
+              ├── Report/investigation service layer
+              └── Offline queue + sync coordinator
+                              │
+                         Supabase API
+                              │
+        ┌─────────────────────┼──────────────────────┐
+        │                     │                      │
+      Auth             PostgreSQL/RLS          Photo Storage
+                              │
+                  Transactional workflow RPCs
 ```
 
----
+See [the architecture notes](docs/ARCHITECTURE.md) and [mobile reliability migration](supabase/migrations/20260929_mobile_reliability.sql).
 
-## 📄 License
+## Technology
 
-Licensed under the MIT License.
+- Expo SDK 57, React 19, and React Native 0.86
+- React Navigation native stack
+- Supabase Auth, PostgreSQL, Storage, and RPCs
+- AsyncStorage, Expo FileSystem, Secure Store, Camera, Location, and Network
+- Jest with the Expo preset
+- EAS development, preview APK, and production profiles
+
+## Run locally
+
+Requirements: Node.js 22+, Expo Go compatible with SDK 57, and access to a configured SafeGuard Supabase project.
+
+```bash
+git clone https://github.com/Abdullah6482/safeguard-mobile.git
+cd safeguard-mobile
+npm ci
+cp .env.example .env
+npm start
+```
+
+On Windows PowerShell, use `Copy-Item .env.example .env` instead of `cp`.
+
+Configure only the public mobile credentials:
+
+```dotenv
+EXPO_PUBLIC_SUPABASE_URL=https://PROJECT_REF.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_your_key
+```
+
+Never embed a service-role or `sb_secret_...` key in a mobile application.
+
+## Verification
+
+```bash
+npm test             # 38 tests across 16 suites
+npm run doctor       # Expo dependency and configuration checks
+npm run check        # Tests followed by Expo Doctor
+```
+
+## Repository map
+
+```text
+screens/reporter/           guided reporting workflow
+screens/investigator/       investigation and CAPA workflow
+navigation/                 auth-aware role routing
+lib/reportService.js        online/idempotent report submission
+lib/investigationService.js protected transition RPC wrappers
+lib/offlineQueue.js         durable local queue and evidence retention
+lib/syncService.js          retry and synchronization coordination
+supabase/migrations/        reliability constraints and RPCs
+__tests__/                  reliability and domain unit tests
+```
+
+## Security note
+
+Client routing improves the user experience; it is not treated as the security boundary. Supabase grants, Row Level Security policies, and role-checking database functions enforce access on the server. Administrative reset tooling requires an explicitly supplied temporary secret and rejects legacy JWT service-role keys.
+
+See [SECURITY.md](SECURITY.md) for responsible disclosure guidance.
+
+## License
+
+Released under the [MIT License](LICENSE).

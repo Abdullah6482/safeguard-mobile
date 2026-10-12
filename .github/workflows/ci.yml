@@ -8,15 +8,18 @@ on:
 
 jobs:
   validate:
-    name: Lint & Syntax Check
+    name: Test & Expo Doctor
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
       - name: Install dependencies
-        run: npm ci || npm install
-      - name: Run syntax and validation check
-        run: node -e "console.log('Project validated successfully')"
+        run: npm ci
+      - name: Run unit tests
+        run: npm test
+      - name: Validate Expo project
+        run: npx expo-doctor
