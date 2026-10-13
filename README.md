@@ -18,9 +18,48 @@ The companion [SafeGuard Web portal](https://github.com/Abdullah6482/safeguard-w
 
 ## Product preview
 
-<p align="center">
-  <img src="docs/screenshots/login.jpg" alt="SafeGuard Mobile sign-in screen" width="320">
-</p>
+<p align="center"><em>Captured from the running Expo web build at a 390 × 844 mobile viewport.</em></p>
+
+<table>
+  <tr>
+    <th>Secure sign in</th>
+    <th>Reporter home</th>
+    <th>Work context</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/mobile/mobile-login.jpg" alt="SafeGuard secure sign-in screen" width="260"></td>
+    <td><img src="docs/screenshots/mobile/reporter-home.jpg" alt="Reporter home and safety score" width="260"></td>
+    <td><img src="docs/screenshots/mobile/reporter-context.jpg" alt="Reporter work-context screen" width="260"></td>
+  </tr>
+  <tr>
+    <th>Incident classification</th>
+    <th>Incident details</th>
+    <th>Initial risk matrix</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/mobile/reporter-incident-type.jpg" alt="Incident type selection" width="260"></td>
+    <td><img src="docs/screenshots/mobile/reporter-details.jpg" alt="Incident details form" width="260"></td>
+    <td><img src="docs/screenshots/mobile/reporter-risk-matrix.jpg" alt="Five-by-five initial risk assessment" width="260"></td>
+  </tr>
+  <tr>
+    <th>Submission confirmation</th>
+    <th>Investigator queue</th>
+    <th>Investigation detail</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/mobile/reporter-success.jpg" alt="Successful incident submission" width="260"></td>
+    <td><img src="docs/screenshots/mobile/investigator-dashboard.jpg" alt="Investigator incident queue" width="260"></td>
+    <td><img src="docs/screenshots/mobile/investigator-report-detail.jpg" alt="Investigator report detail" width="260"></td>
+  </tr>
+  <tr>
+    <th colspan="3">Manager handoff</th>
+  </tr>
+  <tr>
+    <td colspan="3" align="center"><img src="docs/screenshots/mobile/investigator-forwarded.jpg" alt="Investigation forwarded to manager review" width="260"></td>
+  </tr>
+</table>
+
+The gallery uses demo records and shows the complete role-aware path from reporting through investigation handoff. See the [screenshot manifest](docs/screenshots/mobile/README.md) for the screen index.
 
 ## Two role-specific experiences
 
